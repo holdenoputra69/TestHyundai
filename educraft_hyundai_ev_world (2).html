@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduCraft: Hyundai Electric Bus World</title>
+<style>
+  :root {
+    /* Hyundai Indonesia palette */
+    --hyundai-navy: #002C5F;      /* Hyundai Blue (primary) */
+    --hyundai-blue: #0073C7;      /* Active blue */
+    --green: #1D9E75; --green-dark: #0F6E56; --green-light: #E1F5EE;
+    --blue: #378ADD; --blue-dark: #185FA5; --blue-light: #E6F1FB;
+    --amber: #BA7517; --amber-light: #FAEEDA; --amber-mid: #EFB23C;
+    --red: #E24B4A; --red-light: #FCEBEB;
+    --gray: #888780; --gray-dark: #2C2C2A; --gray-light: #F1EFE8;
+    --teal: #1D9E75; --coral: #D85A30;
+    --text: #1a1a1a; --text-muted: #666;
+    --bg: #001a37; --bg-panel: #042c57; --bg-card: #06335f;
+    --border: rgba(140,200,255,0.18);
+    --accent: #5CC8F5;            /* readable sky blue (replaces neon teal) */
+    --accent2: #86E2EC;           /* aqua */
+    --ink: #EAF4FF;               /* readable near-white body text */
+    --font: 'Segoe UI', system-ui, sans-serif;
+    /* Hyundai signature "Parametric Pixel" ambient texture (subtle, no big logo) */
+    --pixel: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><g fill='%235CC8F5' fill-opacity='0.05'><rect x='14' y='20' width='10' height='10' rx='2'/><rect x='58' y='44' width='6' height='6' rx='1'/><rect x='132' y='16' width='9' height='9' rx='2'/><rect x='100' y='78' width='11' height='11' rx='2'/><rect x='34' y='106' width='7' height='7' rx='1'/><rect x='156' y='122' width='6' height='6' rx='1'/><rect x='78' y='144' width='10' height='10' rx='2'/><rect x='122' y='154' width='7' height='7' rx='1'/></g><g fill='%23ffffff' fill-opacity='0.035'><rect x='44' y='12' width='5' height='5'/><rect x='166' y='66' width='5' height='5'/><rect x='12' y='66' width='6' height='6'/><rect x='86' y='30' width='5' height='5'/><rect x='140' y='100' width='9' height='9' rx='2'/><rect x='22' y='150' width='6' height='6'/><rect x='106' y='120' width='5' height='5'/></g></svg>");
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background:
+      var(--pixel),
+      radial-gradient(ellipse at 70% -10%, #0a4a8c 0%, transparent 55%),
+      linear-gradient(160deg, #00255a 0%, #001a37 55%, #001027 100%);
+    color: var(--ink); min-height: 100vh; overflow-x: hidden; }
+  html { background: #001027; }
+
+  /* SCREEN SYSTEM */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* TITLE SCREEN */
+  #title-screen {
+    background: transparent;
+    align-items: center; justify-content: center; text-align: center; padding: 2rem;
+    position: relative; overflow: hidden;
+  }
+  #title-screen::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 30%, rgba(79,195,247,0.08) 0%, transparent 60%);
+  }
+  .title-logo { font-size: 3.4rem; font-weight: 800; letter-spacing: -1px;
+    background: linear-gradient(180deg, #FFFFFF 0%, #9FE3FF 100%); -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem;
+    text-shadow: 0 2px 24px rgba(92,200,245,0.25); }
+  .title-sub { font-size: 1.1rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem; }
+  .title-brand { font-size: 0.95rem; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2.5rem; }
+  .title-stats { display: flex; gap: 2rem; justify-content: center; margin-bottom: 3rem; flex-wrap: wrap; }
+  .title-stat { text-align: center; }
+  .title-stat-num { font-size: 2rem; font-weight: 700; color: var(--accent); }
+  .title-stat-label { font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+  .btn-start { background: var(--accent); color: #000; border: none; padding: 1rem 3rem;
+    font-size: 1.1rem; font-weight: 700; border-radius: 50px; cursor: pointer;
+    letter-spacing: 1px; transition: transform 0.2s, box-shadow 0.2s; }
+  .btn-start:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(79,195,247,0.4); }
+
+  /* HUD */
+  #hud { background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 0.6rem 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; flex-shrink: 0; }
+  .hud-title { font-size: 0.9rem; font-weight: 700; color: var(--accent); flex: 1; min-width: 120px; }
+  .hud-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
+  .hud-label { color: rgba(255,255,255,0.5); font-size: 0.75rem; }
+  .hud-val { font-weight: 700; color: #fff; }
+  .xp-bar-wrap { background: rgba(255,255,255,0.1); border-radius: 20px; height: 8px; width: 120px; overflow: hidden; }
+  .xp-bar { background: linear-gradient(90deg, var(--accent), var(--accent2)); height: 100%; border-radius: 20px; transition: width 0.5s; }
+  .rank-badge { background: rgba(79,195,247,0.15); border: 1px solid var(--accent); border-radius: 20px;
+    padding: 0.2rem 0.8rem; font-size: 0.75rem; color: var(--accent); font-weight: 600; }
+
+  /* WORLD SELECT */
+  #world-screen { background: transparent; }
+  .world-header { padding: 2rem 2rem 1rem; text-align: center; }
+  .world-header h1 { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+  .world-header p { color: rgba(255,255,255,0.5); margin-top: 0.5rem; }
+  .worlds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem; padding: 1rem 2rem 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+  .world-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 1.5rem; cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden; }
+  .world-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+  .world-card.locked { opacity: 0.5; cursor: not-allowed; }
+  .world-card.locked:hover { transform: none; border-color: var(--border); }
+  .world-card.completed { border-color: var(--green); }
+  .world-num { font-size: 3rem; font-weight: 800; opacity: 0.15; position: absolute; top: 0.5rem; right: 1rem; }
+  .world-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .world-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .world-desc { font-size: 0.8rem; color: rgba(255,255,255,0.5); line-height: 1.5; margin-bottom: 1rem; }
+  .world-xp { font-size: 0.8rem; color: var(--amber-mid); font-weight: 600; }
+  .world-status { position: absolute; top: 1rem; right: 1rem; font-size: 0.7rem; padding: 0.2rem 0.6rem;
+    border-radius: 20px; font-weight: 600; }
+  .status-locked { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
+  .status-active { background: rgba(79,195,247,0.15); color: var(--accent); }
+  .status-done { background: rgba(29,158,117,0.2); color: #5DCAA5; }
+
+  /* MISSION SCREEN */
+  #mission-screen { background: transparent; }
+  .mission-area { flex: 1; display: flex; gap: 0; }
+  .mission-sidebar { width: 280px; background: var(--bg-panel); border-right: 1px solid var(--border);
+    padding: 1.5rem 1rem; flex-shrink: 0; overflow-y: auto; }
+  .mission-sidebar h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;
+    color: rgba(255,255,255,0.4); margin-bottom: 1rem; }
+  .mission-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.75rem 1rem; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s; }
+  .mission-item:hover { border-color: var(--accent); }
+  .mission-item.active { border-color: var(--accent); background: rgba(79,195,247,0.08); }
+  .mission-item.done { border-color: var(--green); opacity: 0.7; }
+  .mission-item-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.2rem; }
+  .mission-item-xp { font-size: 0.75rem; color: var(--amber-mid); }
+  .mission-content { flex: 1; padding: 2rem; overflow-y: auto; }
+  .mission-title-bar { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 2rem; }
+  .world-emoji { font-size: 2.5rem; }
+  .mission-main-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .mission-main-sub { color: rgba(255,255,255,0.5); font-size: 0.9rem; }
+
+  /* ACTIVITY CARDS */
+  .activity-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.5rem; margin-bottom: 1.5rem; }
+  .activity-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--accent2); }
+
+  /* QUIZ */
+  .quiz-question { font-size: 1rem; line-height: 1.6; margin-bottom: 1.25rem; color: rgba(255,255,255,0.9); }
+  .quiz-options { display: flex; flex-direction: column; gap: 0.6rem; }
+  .quiz-option { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.75rem 1rem; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; text-align: left; color: #e8f0fe; }
+  .quiz-option:hover { border-color: var(--accent2); background: rgba(128,222,234,0.08); }
+  .quiz-option.correct { border-color: var(--accent); background: rgba(79,195,247,0.12); color: var(--accent); }
+  .quiz-option.wrong { border-color: var(--red); background: rgba(226,75,74,0.12); color: #f09595; }
+  .quiz-option:disabled { cursor: not-allowed; }
+  .quiz-feedback { margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.9rem; font-weight: 500; }
+  .quiz-feedback.ok { background: rgba(79,195,247,0.12); border: 1px solid var(--accent); color: var(--accent); }
+  .quiz-feedback.fail { background: rgba(226,75,74,0.12); border: 1px solid var(--red); color: #f09595; }
+
+  /* MINIGAME - Battery Assembly */
+  .battery-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 1rem 0; }
+  .battery-cell { height: 40px; border-radius: 8px; border: 2px dashed rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center; font-size: 0.75rem;
+    cursor: pointer; transition: all 0.2s; }
+  .battery-cell.filled { background: rgba(79,195,247,0.2); border-color: var(--accent); border-style: solid; }
+  .battery-cell.filled:hover { background: rgba(79,195,247,0.35); }
+  .battery-cell:not(.filled):hover { border-color: var(--accent2); background: rgba(128,222,234,0.08); }
+  .battery-progress { display: flex; align-items: center; gap: 1rem; margin: 1rem 0; }
+  .cap-bar-wrap { flex: 1; background: rgba(255,255,255,0.1); border-radius: 20px; height: 12px; overflow: hidden; }
+  .cap-bar { height: 100%; border-radius: 20px; transition: width 0.4s;
+    background: linear-gradient(90deg, var(--accent), #2BA8C9); }
+  .cap-label { font-size: 0.85rem; font-weight: 700; min-width: 80px; color: var(--accent); }
+
+  /* MINIGAME - Route Sim */
+  .route-map { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 1.5rem;
+    margin: 1rem 0; position: relative; }
+  .route-path { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; overflow-x: auto; padding: 1rem 0; }
+  .route-stop { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  .stop-dot { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 1.1rem; z-index: 1; border: 2px solid rgba(255,255,255,0.2); }
+  .stop-dot.visited { border-color: var(--accent); background: rgba(79,195,247,0.2); }
+  .stop-dot.current { border-color: #fff; background: var(--accent); animation: pulse 1s infinite; }
+  .stop-dot.future { background: rgba(255,255,255,0.05); }
+  .stop-label { font-size: 0.65rem; margin-top: 0.4rem; color: rgba(255,255,255,0.6); text-align: center; max-width: 60px; }
+  .route-line { height: 3px; width: 40px; flex-shrink: 0; border-radius: 2px; }
+  .route-line.passed { background: var(--accent); }
+  .route-line.future { background: rgba(255,255,255,0.15); }
+  .battery-hud { display: flex; gap: 1.5rem; margin: 1rem 0; flex-wrap: wrap; }
+  .bhud-item { display: flex; flex-direction: column; gap: 0.2rem; }
+  .bhud-label { font-size: 0.7rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+  .bhud-val { font-size: 1.3rem; font-weight: 700; }
+  .drive-btn { background: var(--accent); color: #000; border: none; padding: 0.6rem 1.5rem;
+    border-radius: 50px; font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+  .drive-btn:hover { background: #29A8DD; }
+  .drive-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* MINIGAME - Emissions Survey */
+  .emission-map { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin: 1rem 0; }
+  .em-location { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.75rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .em-location:hover { border-color: var(--accent2); }
+  .em-location.scanned { border-color: var(--accent); background: rgba(79,195,247,0.06); }
+  .em-location.scanned .em-icon { filter: grayscale(0); }
+  .em-icon { font-size: 1.5rem; margin-bottom: 0.3rem; filter: grayscale(1); }
+  .em-location.scanned .em-icon { filter: none; }
+  .em-name { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
+  .em-co2 { font-size: 0.8rem; font-weight: 700; color: #f09595; margin-top: 0.25rem; }
+
+  /* MINIGAME - City Builder */
+  .city-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 1rem 0; }
+  .city-cell { height: 50px; border-radius: 6px; background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center;
+    justify-content: center; font-size: 1.2rem; cursor: pointer; transition: all 0.15s; }
+  .city-cell:hover { background: rgba(255,255,255,0.1); }
+  .city-cell.placed { border-color: rgba(79,195,247,0.3); background: rgba(79,195,247,0.08); }
+  .build-palette { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .build-item { background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.4rem 0.75rem; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem; }
+  .build-item:hover { border-color: var(--accent2); }
+  .build-item.selected { border-color: var(--accent); background: rgba(79,195,247,0.1); }
+
+  /* PRESENTATION SCREEN */
+  .presentation-slide { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 2rem; margin-bottom: 1.5rem; }
+  .slide-num { font-size: 0.75rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+  .slide-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem; }
+  .data-row { display: flex; justify-content: space-between; padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.9rem; }
+  .data-key { color: rgba(255,255,255,0.6); }
+  .data-val { font-weight: 600; color: var(--accent); }
+
+  /* COMPLETION */
+  #completion-screen { background: transparent;
+    align-items: center; justify-content: center; text-align: center; padding: 2rem; }
+  .cert-card { background: var(--bg-card); border: 2px solid var(--accent); border-radius: 24px;
+    padding: 3rem 2rem; max-width: 500px; width: 100%; }
+  .cert-badge { font-size: 4rem; margin-bottom: 1rem; }
+  .cert-title { font-size: 1.8rem; font-weight: 800; color: var(--accent); margin-bottom: 0.5rem; }
+  .cert-name { font-size: 1.2rem; margin: 1rem 0 0.25rem; }
+  .cert-rank { background: rgba(79,195,247,0.15); border: 1px solid var(--accent); border-radius: 20px;
+    display: inline-block; padding: 0.3rem 1.2rem; font-size: 0.85rem; color: var(--accent); font-weight: 600; margin: 0.5rem 0 1.5rem; }
+  .cert-stats { display: flex; justify-content: center; gap: 2rem; margin: 1.5rem 0; }
+  .cert-stat { text-align: center; }
+  .cert-stat-num { font-size: 1.5rem; font-weight: 700; color: #fff; }
+  .cert-stat-label { font-size: 0.7rem; color: rgba(255,255,255,0.5); }
+
+  /* BUTTONS */
+  .btn { border: none; border-radius: 50px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+  .btn-primary { background: var(--accent); color: #000; padding: 0.6rem 1.5rem; }
+  .btn-primary:hover { background: #29A8DD; transform: translateY(-1px); }
+  .btn-secondary { background: rgba(255,255,255,0.08); color: #e8f0fe; border: 1px solid var(--border);
+    padding: 0.55rem 1.4rem; }
+  .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+  .btn-sm { padding: 0.4rem 1rem; font-size: 0.85rem; }
+
+  .progress-row { display: flex; align-items: center; gap: 1rem; margin: 0.75rem 0; }
+  .prog-label { font-size: 0.8rem; color: rgba(255,255,255,0.5); min-width: 100px; }
+  .prog-bar-bg { flex: 1; background: rgba(255,255,255,0.1); border-radius: 20px; height: 8px; overflow: hidden; }
+  .prog-bar-fill { height: 100%; border-radius: 20px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.8s; }
+  .prog-val { font-size: 0.8rem; font-weight: 700; color: var(--accent); min-width: 40px; text-align: right; }
+
+  .npc-bubble { background: rgba(255,255,255,0.06); border-left: 3px solid var(--accent2);
+    border-radius: 0 10px 10px 0; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.85rem;
+    color: rgba(255,255,255,0.85); line-height: 1.6; }
+  .npc-name { font-size: 0.7rem; color: var(--accent2); font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 0.25rem; }
+
+  .section-divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+
+  .tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem;
+    font-weight: 600; margin: 0.15rem; }
+  .tag-science { background: rgba(128,222,234,0.15); color: var(--accent2); }
+  .tag-math { background: rgba(239,159,39,0.15); color: #FAC775; }
+  .tag-engineering { background: rgba(79,195,247,0.15); color: var(--accent); }
+  .tag-env { background: rgba(29,158,117,0.15); color: #5DCAA5; }
+
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  @keyframes slideIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+  .animate-in { animation: slideIn 0.4s ease-out both; }
+
+  .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--accent); color: #000;
+    padding: 0.75rem 1.5rem; border-radius: 50px; font-weight: 700; font-size: 0.9rem;
+    z-index: 9999; animation: slideIn 0.3s ease-out; display: none; }
+
+  .objective-list { list-style: none; }
+  .objective-list li { padding: 0.35rem 0; font-size: 0.85rem; color: rgba(255,255,255,0.75);
+    display: flex; align-items: flex-start; gap: 0.5rem; }
+  .objective-list li::before { content: '▹'; color: var(--accent); flex-shrink: 0; }
+
+  .completion-banner { background: rgba(79,195,247,0.1); border: 1px solid var(--accent);
+    border-radius: 12px; padding: 1rem 1.25rem; text-align: center; }
+  .completion-banner p { color: var(--accent); font-weight: 600; }
+
+  #nav-back { background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer;
+    font-size: 0.9rem; padding: 0.4rem 0.8rem; border-radius: 8px; transition: all 0.2s; }
+  #nav-back:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+  input[type=range] { accent-color: var(--accent); width: 100%; }
+  select { background: var(--bg-card); color: #e8f0fe; border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.4rem 0.75rem; font-size: 0.85rem; }
+  select:focus { outline: none; border-color: var(--accent); }
+
+  .leaderboard-row { display: flex; align-items: center; gap: 1rem; padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.85rem; }
+  .lb-rank { font-size: 1rem; width: 24px; text-align: center; }
+  .lb-name { flex: 1; }
+  .lb-xp { color: var(--amber-mid); font-weight: 700; }
+
+  @media (max-width: 700px) {
+    .worlds-grid { grid-template-columns: 1fr; padding: 1rem; }
+    .mission-area { flex-direction: column; }
+    .mission-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); max-height: 200px; }
+    .title-logo { font-size: 2rem; }
+  }
+
+  /* ===== JOURNEY MAP (world select as a road of stops) ===== */
+  .world-map { position: relative; max-width: 860px; margin: 0 auto; padding: 1.5rem 1rem 3.5rem; width: 100%; }
+  .world-map::before { content: ''; position: absolute; top: 2rem; bottom: 3rem; left: 50%;
+    transform: translateX(-50%); border-left: 4px dashed rgba(92,200,245,0.35); border-radius: 4px; }
+  .map-stop { position: relative; display: grid; grid-template-columns: 1fr 72px 1fr;
+    align-items: center; margin-bottom: 1.4rem; }
+  .map-card { grid-column: 1; background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 0.9rem 1.1rem; box-shadow: 0 8px 22px rgba(0,0,0,0.28);
+    transition: transform .2s, border-color .2s; }
+  .map-stop.side-right .map-card { grid-column: 3; }
+  .map-card.clickable { cursor: pointer; }
+  .map-card.clickable:hover { transform: translateY(-3px); border-color: var(--accent); }
+  .map-card.locked { opacity: 0.55; }
+  .map-card.done { border-color: #4FD8A6; }
+  .map-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem; color: #fff; }
+  .map-card p { font-size: 0.78rem; color: rgba(220,238,255,0.65); line-height: 1.5; margin-bottom: 0.55rem; }
+  .map-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+  .map-xp { font-size: 0.78rem; color: var(--amber-mid); font-weight: 700; }
+  .map-chip { font-size: 0.68rem; padding: 0.18rem 0.6rem; border-radius: 20px; font-weight: 700; }
+  .chip-locked { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.45); }
+  .chip-active { background: rgba(92,200,245,0.18); color: var(--accent); }
+  .chip-done { background: rgba(79,216,166,0.2); color: #6FE3B6; }
+  .map-node { grid-column: 2; justify-self: center; z-index: 2; width: 66px; height: 66px;
+    border-radius: 50%; border: 3px solid var(--border); background: var(--bg-panel);
+    font-size: 1.8rem; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative; box-shadow: 0 6px 18px rgba(0,0,0,0.4); transition: transform .2s; }
+  .map-node:hover { transform: scale(1.09); }
+  .map-node.locked { filter: grayscale(0.85); opacity: 0.55; cursor: not-allowed; }
+  .map-node.active { border-color: var(--accent); animation: pulse 1.7s infinite; }
+  .map-node.done { border-color: #4FD8A6; }
+  .node-num { position: absolute; top: -8px; left: -8px; width: 23px; height: 23px; border-radius: 50%;
+    background: var(--accent); color: #002C5F; font-size: 0.72rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+  .node-bus { position: absolute; bottom: -10px; right: -12px; font-size: 1.1rem;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); animation: busBob 1.4s ease-in-out infinite; }
+  @keyframes busBob { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-3px) rotate(4deg); } }
+  .mc-mini { margin-top: 0.5rem; background: rgba(92,200,245,0.1); border: 1px solid var(--accent);
+    color: var(--accent); border-radius: 8px; padding: 0.3rem 0.7rem; font-size: 0.72rem; font-weight: 700;
+    cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: 0.3rem; }
+  .mc-mini:hover { background: rgba(92,200,245,0.2); }
+
+  /* ===== ILLUSTRATED CHAT BUBBLES (sequential reveal) ===== */
+  .chat-row { display: flex; gap: 0.6rem; align-items: flex-end; margin: 0.9rem 0;
+    opacity: 0; animation: bubbleIn 0.45s ease-out forwards; }
+  .chat-row.right { flex-direction: row-reverse; }
+  .chat-avatar { flex-shrink: 0; width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+    background: linear-gradient(140deg, var(--hyundai-blue), #013766); border: 2px solid var(--accent);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35); }
+  .chat-bubble { position: relative; background: #0b3d72; border: 1px solid var(--border);
+    border-radius: 4px 16px 16px 16px; padding: 0.7rem 1rem; font-size: 0.9rem; line-height: 1.6;
+    color: var(--ink); max-width: 640px; }
+  .chat-bubble::before { content: ''; position: absolute; left: -7px; bottom: 12px;
+    border: 7px solid transparent; border-right-color: #0b3d72; border-left: 0; }
+  .chat-bubble .npc-name { font-size: 0.7rem; color: var(--accent); font-weight: 800;
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.25rem; }
+  @keyframes bubbleIn { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: none; } }
+
+  /* ===== IN-MISSION WORLD SWITCHER ===== */
+  .world-switch { display: flex; align-items: center; gap: 0.3rem; }
+  .ws-btn { background: rgba(92,200,245,0.1); border: 1px solid var(--border); color: var(--accent);
+    width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; transition: all .2s; }
+  .ws-btn:hover:not(:disabled) { background: rgba(92,200,245,0.22); border-color: var(--accent); }
+  .ws-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .mc-btn { background: linear-gradient(135deg, #5BA24B, #3E7C36); border: none; color: #fff;
+    padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.35rem; transition: all .2s; }
+  .mc-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+  /* ===== MINECRAFT PORTING MODAL ===== */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,12,28,0.78); backdrop-filter: blur(4px);
+    z-index: 10000; display: none; align-items: center; justify-content: center; padding: 1.5rem; }
+  .modal-overlay.open { display: flex; }
+  .modal-card { background: linear-gradient(160deg, #06335f, #022247); border: 1px solid var(--accent);
+    border-radius: 20px; padding: 1.75rem; max-width: 460px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: bubbleIn 0.35s ease-out; }
+  .modal-card h3 { color: var(--accent); font-size: 1.15rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; }
+  .modal-card .modal-sub { font-size: 0.85rem; color: rgba(220,238,255,0.65); margin-bottom: 1.1rem; }
+  .mc-field { background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.7rem 0.9rem; margin-bottom: 0.6rem; }
+  .mc-field-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.45); }
+  .mc-field-val { font-size: 0.9rem; font-weight: 600; color: #fff; word-break: break-all; }
+  .mc-status { font-size: 0.78rem; padding: 0.5rem 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
+  .mc-status.pending { background: rgba(239,178,60,0.12); border: 1px solid var(--amber-mid); color: #F4C868; }
+  .mc-status.ready { background: rgba(79,216,166,0.12); border: 1px solid #4FD8A6; color: #6FE3B6; }
+  .modal-actions { display: flex; gap: 0.6rem; margin-top: 0.5rem; }
+  @media (max-width: 700px) {
+    .map-stop { grid-template-columns: 56px 1fr; }
+    .world-map::before { left: 28px; }
+    .map-node { grid-column: 1; width: 52px; height: 52px; font-size: 1.4rem; }
+    .map-card, .map-stop.side-right .map-card { grid-column: 2; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== TITLE SCREEN ===== -->
+<div class="screen active" id="title-screen">
+  <div style="position:relative;z-index:1;max-width:700px;width:100%;">
+    <div style="font-size:0.8rem;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:1rem;">Save the Children × Hyundai Indonesia</div>
+    <div class="title-logo">EduCraft</div>
+    <div style="font-size:1.4rem;font-weight:300;color:rgba(255,255,255,0.8);margin-bottom:0.25rem;">Hyundai Electric Bus World</div>
+    <div class="title-brand">🏙️ Selamatkan Jakarta 2030 dengan Bus Listrik</div>
+    <div class="title-stats">
+      <div class="title-stat"><div class="title-stat-num">5</div><div class="title-stat-label">Dunia</div></div>
+      <div class="title-stat"><div class="title-stat-num">20+</div><div class="title-stat-label">Misi</div></div>
+      <div class="title-stat"><div class="title-stat-num">8 jam</div><div class="title-stat-label">Gameplay</div></div>
+      <div class="title-stat"><div class="title-stat-num">6000</div><div class="title-stat-label">XP Total</div></div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:0.85rem;color:rgba(255,255,255,0.5);">Nama Pemain:</label>
+      <input id="player-name" type="text" placeholder="Masukkan nama kamu..." style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 1rem;color:#fff;font-size:1rem;width:100%;margin-top:0.4rem;max-width:360px;display:block;margin:0.4rem auto 0;">
+    </div>
+    <br>
+    <button class="btn-start" onclick="startGame()">🚌 Mulai Petualangan</button>
+    <p style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-top:1rem;">Minecraft Education Edition · Kelas 7–9 SMP · Jakarta</p>
+  </div>
+</div>
+
+<!-- ===== WORLD SELECT SCREEN ===== -->
+<div class="screen" id="world-screen">
+  <div id="hud">
+    <button id="nav-back" onclick="goTitle()">← Menu</button>
+    <div class="hud-title" id="hud-player">Player</div>
+    <div class="hud-item">
+      <span class="hud-label">XP</span>
+      <span class="hud-val" id="hud-xp">0</span>
+    </div>
+    <div class="xp-bar-wrap"><div class="xp-bar" id="xp-bar" style="width:0%"></div></div>
+    <div class="rank-badge" id="hud-rank">Apprentice Mechanic</div>
+  </div>
+  <div class="world-header">
+    <h1>🗺️ Peta Petualangan</h1>
+    <p>Ikuti jalur dari satu dunia ke dunia berikutnya. Selesaikan setiap pemberhentian untuk membuka jalan!</p>
+  </div>
+  <div class="world-map" id="world-map"></div>
+</div>
+
+<!-- ===== MISSION SCREEN ===== -->
+<div class="screen" id="mission-screen">
+  <div id="hud2" style="background:var(--bg-panel);border-bottom:1px solid var(--border);padding:0.6rem 1rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;flex-shrink:0;">
+    <button id="nav-back2" onclick="showWorldSelect()" style="background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;font-size:0.85rem;padding:0.4rem 0.7rem;border-radius:8px;">🗺️ Peta</button>
+    <div class="world-switch">
+      <button class="ws-btn" id="world-prev" onclick="switchWorld(-1)" title="Dunia sebelumnya">◀</button>
+      <div style="font-size:0.85rem;color:var(--accent);font-weight:700;min-width:80px;text-align:center;" id="hud2-world">Dunia 1</div>
+      <button class="ws-btn" id="world-next" onclick="switchWorld(1)" title="Dunia berikutnya">▶</button>
+    </div>
+    <div style="flex:1"></div>
+    <button class="mc-btn" onclick="openInMinecraft(state.currentWorld)" title="Buka dunia ini di Minecraft">⛏️ Buka di Minecraft</button>
+    <div style="font-size:0.85rem;"><span style="color:rgba(255,255,255,0.5);">XP: </span><span style="font-weight:700;" id="hud2-xp">0</span></div>
+    <div class="rank-badge" id="hud2-rank">Apprentice</div>
+  </div>
+  <div class="mission-area">
+    <div class="mission-sidebar" id="mission-sidebar"></div>
+    <div class="mission-content" id="mission-content"></div>
+  </div>
+</div>
+
+<!-- ===== COMPLETION SCREEN ===== -->
+<div class="screen" id="completion-screen">
+  <div class="cert-card animate-in">
+    <div class="cert-badge">🏆</div>
+    <div style="font-size:0.8rem;letter-spacing:2px;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-bottom:0.5rem;">Sertifikat Resmi</div>
+    <div class="cert-title">Hyundai EV Ambassador</div>
+    <p style="color:rgba(255,255,255,0.6);font-size:0.9rem;">Diberikan kepada:</p>
+    <div class="cert-name" id="cert-player-name" style="font-size:1.5rem;font-weight:700;"></div>
+    <div class="cert-rank" id="cert-rank"></div>
+    <p style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:1rem;">Telah berhasil menyelesaikan program<br><strong style="color:#fff;">EduCraft: Hyundai Electric Bus World</strong></p>
+    <div class="cert-stats">
+      <div class="cert-stat"><div class="cert-stat-num" id="cert-xp">0</div><div class="cert-stat-label">Total XP</div></div>
+      <div class="cert-stat"><div class="cert-stat-num" id="cert-worlds">5</div><div class="cert-stat-label">Dunia</div></div>
+      <div class="cert-stat"><div class="cert-stat-num" id="cert-missions">9</div><div class="cert-stat-label">Misi</div></div>
+    </div>
+    <p style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin: 1rem 0 1.5rem;">Save the Children Indonesia × Hyundai Indonesia · 2025</p>
+    <button class="btn btn-primary" onclick="goTitle()">🏠 Kembali ke Menu</button>
+  </div>
+</div>
+
+<!-- ===== MINECRAFT PORTING MODAL (future-compatibility slot) ===== -->
+<div class="modal-overlay" id="mc-modal">
+  <div class="modal-card">
+    <h3>⛏️ Buka di Minecraft</h3>
+    <div class="modal-sub" id="mc-modal-sub">Hubungkan dunia ini ke Minecraft Education Edition.</div>
+    <div class="mc-status pending" id="mc-status">Slot koneksi siap. Tautan dunia Minecraft belum dipasang oleh admin.</div>
+    <div class="mc-field"><div class="mc-field-label">Dunia</div><div class="mc-field-val" id="mc-world-name">—</div></div>
+    <div class="mc-field"><div class="mc-field-label">Kode Transfer Map</div><div class="mc-field-val" id="mc-code">—</div></div>
+    <div class="mc-field"><div class="mc-field-label">Tautan / Deep Link</div><div class="mc-field-val" id="mc-link">—</div></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary btn-sm" id="mc-open-btn" onclick="launchMinecraft()">🚀 Buka Sekarang</button>
+      <button class="btn btn-secondary btn-sm" onclick="copyMcCode()">📋 Salin Kode</button>
+      <button class="btn btn-secondary btn-sm" onclick="closeMcModal()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let state = {
+  playerName: 'Pemain',
+  xp: 0,
+  completedWorlds: [],
+  completedMissions: [],
+  currentWorld: null,
+  currentMission: null,
+  batteryFilled: 0,
+  scannedLocations: [],
+  routeStep: 0,
+  routeBattery: 100,
+  cityGrid: {},
+  selectedBuild: '🚌',
+  quizAnswered: {},
+  teamScore: 0,
+};
+
+const XP_THRESHOLDS = {
+  'Apprentice Mechanic': 0,
+  'EV Engineer': 2001,
+  'Senior Technologist': 4001,
+  'Hyundai EV Ambassador': 6001,
+};
+
+function getRank(xp) {
+  if (xp >= 6001) return 'Hyundai EV Ambassador';
+  if (xp >= 4001) return 'Senior Technologist';
+  if (xp >= 2001) return 'EV Engineer';
+  return 'Apprentice Mechanic';
+}
+
+function getXpPercent(xp) {
+  if (xp >= 6001) return 100;
+  if (xp >= 4001) return 50 + ((xp - 4001) / 2000) * 50;
+  if (xp >= 2001) return 25 + ((xp - 2001) / 2000) * 25;
+  return (xp / 2000) * 25;
+}
+
+// ===================== WORLDS DATA =====================
+const WORLDS = [
+  {
+    id: 1, emoji: '🌆', title: 'Kota Polusi — Jakarta 2030',
+    desc: 'Ukur emisi CO2 di 10 titik kota dan laporkan ke Balai Kota.',
+    xpReward: 700, color: '#E24B4A',
+    missions: [
+      {
+        id: 'sq01', code: 'SQ-01', title: 'Operasi Udara Bersih', xp: 500,
+        type: 'emissions', locked: false,
+      },
+      {
+        id: 'boss1', code: 'BOSS', title: 'Boss: Raja Kabut Polusi', xp: 200,
+        type: 'quiz-boss1', locked: true,
+      }
+    ]
+  },
+  {
+    id: 2, emoji: '🏭', title: 'Pabrik Hyundai — Lab Teknologi EV',
+    desc: 'Rakit komponen bus Hyundai Elec City dari nol.',
+    xpReward: 1150, color: '#378ADD',
+    missions: [
+      { id: 'sq02', code: 'SQ-02', title: 'Detektif Pabrik', xp: 300, type: 'quiz-parts', locked: false },
+      { id: 'sq03', code: 'SQ-03', title: 'Insinyur Baterai', xp: 750, type: 'battery', locked: true },
+      { id: 'sq04', code: 'SQ-04', title: 'Motor Listrik Hidup', xp: 400, type: 'quiz-motor', locked: true },
+    ]
+  },
+  {
+    id: 3, emoji: '🌿', title: 'Kota Hijau — Uji Rute Bus',
+    desc: 'Kemudikan bus, kelola energi, dan bangun SPKLU Jakarta.',
+    xpReward: 1300, color: '#1D9E75',
+    missions: [
+      { id: 'sq05', code: 'SQ-05', title: 'Uji Jarak Tempuh', xp: 600, type: 'route', locked: false },
+      { id: 'sq06', code: 'SQ-06', title: 'Arsitek SPKLU', xp: 800, type: 'spklu', locked: true },
+    ]
+  },
+  {
+    id: 4, emoji: '🏆', title: 'Pusat Inovasi — Hackathon Virtual',
+    desc: 'Bersaing dalam hackathon desain kota transportasi masa depan.',
+    xpReward: 1000, color: '#BA7517',
+    missions: [
+      { id: 'sq08', code: 'SQ-08', title: 'Ketua Tim Inovasi', xp: 1000, type: 'citybuilder', locked: false },
+    ]
+  },
+  {
+    id: 5, emoji: '✨', title: 'Jakarta Masa Depan — Grand Finale',
+    desc: 'Presentasikan Proposal Transportasi Hijau Jakarta 2050.',
+    xpReward: 1200, color: '#7F77DD',
+    missions: [
+      { id: 'sq09', code: 'SQ-09', title: 'Proposal Walikota', xp: 1200, type: 'presentation', locked: false },
+    ]
+  },
+];
+
+// ===================== NAVIGATION =====================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goTitle() {
+  showScreen('title-screen');
+  state.currentWorld = null;
+}
+
+function startGame() {
+  const name = document.getElementById('player-name').value.trim() || 'Pemain';
+  state.playerName = name;
+  showWorldSelect();
+}
+
+function showWorldSelect() {
+  showScreen('world-screen');
+  updateHUD();
+  renderWorlds();
+}
+
+function updateHUD() {
+  const rank = getRank(state.xp);
+  const pct = getXpPercent(state.xp);
+  document.getElementById('hud-player').textContent = state.playerName;
+  document.getElementById('hud-xp').textContent = state.xp.toLocaleString();
+  document.getElementById('xp-bar').style.width = pct + '%';
+  document.getElementById('hud-rank').textContent = rank;
+  document.getElementById('hud2-xp').textContent = state.xp.toLocaleString();
+  document.getElementById('hud2-rank').textContent = rank;
+}
+
+function renderWorlds() {
+  const map = document.getElementById('world-map');
+  map.innerHTML = '';
+  WORLDS.forEach((w, i) => {
+    const prevDone = i === 0 || state.completedWorlds.includes(i); // previous world id == i
+    const done = state.completedWorlds.includes(w.id);
+    const locked = !prevDone && !done;
+    const missionsDone = w.missions.filter(m => state.completedMissions.includes(m.id)).length;
+    const stop = document.createElement('div');
+    stop.className = 'map-stop animate-in ' + (i % 2 === 0 ? 'side-left' : 'side-right');
+    stop.style.animationDelay = (i * 0.08) + 's';
+
+    const nodeCls = 'map-node ' + (locked ? 'locked' : done ? 'done' : 'active');
+    const chip = done ? '<span class="map-chip chip-done">✓ Selesai</span>'
+      : locked ? '<span class="map-chip chip-locked">🔒 Terkunci</span>'
+      : '<span class="map-chip chip-active">▶ Jalan ini terbuka</span>';
+    const showBus = !locked && !done; // bus marks playable stops
+
+    stop.innerHTML = `
+      <div class="map-node ${nodeCls.replace('map-node ','')}" data-world="${w.id}">
+        <span class="node-num">${w.id}</span>
+        ${w.emoji}
+        ${showBus ? '<span class="node-bus">🚌</span>' : ''}
+      </div>
+      <div class="map-card ${locked ? 'locked' : 'clickable'} ${done ? 'done' : ''}" data-world="${w.id}">
+        <h4>${w.title}</h4>
+        <p>${w.desc}</p>
+        <div class="map-meta">
+          <span class="map-xp">+${w.xpReward.toLocaleString()} XP</span>
+          <span style="font-size:0.74rem;color:rgba(255,255,255,0.45);">${missionsDone}/${w.missions.length} misi</span>
+          ${chip}
+        </div>
+        ${!locked ? `<button class="mc-mini" onclick="event.stopPropagation(); openInMinecraft(${w.id})">⛏️ Buka di Minecraft</button>` : ''}
+      </div>`;
+
+    const node = stop.querySelector('.map-node');
+    const card = stop.querySelector('.map-card');
+    if (!locked) {
+      node.onclick = () => enterWorld(w.id);
+      card.onclick = () => enterWorld(w.id);
+    } else {
+      node.onclick = card.onclick = () => showToast('🔒 Selesaikan dunia sebelumnya untuk membuka jalan ini!');
+    }
+    map.appendChild(stop);
+  });
+}
+
+function enterWorld(worldId) {
+  state.currentWorld = worldId;
+  const world = WORLDS.find(w => w.id === worldId);
+  showScreen('mission-screen');
+  document.getElementById('hud2-world').textContent = `Dunia ${world.id}`;
+  updateHUD();
+  updateWorldSwitchButtons();
+  renderMissionSidebar(world);
+  const firstMission = world.missions[0];
+  openMission(world, firstMission);
+}
+
+function renderMissionSidebar(world) {
+  const sb = document.getElementById('mission-sidebar');
+  sb.innerHTML = `<h3>Misi Dunia ${world.id}</h3>`;
+  world.missions.forEach(m => {
+    const done = state.completedMissions.includes(m.id);
+    const div = document.createElement('div');
+    div.className = 'mission-item' + (done ? ' done' : '');
+    div.id = 'msb-' + m.id;
+    div.innerHTML = `<div class="mission-item-title">${done ? '✓ ' : ''}${m.code}: ${m.title}</div>
+      <div class="mission-item-xp">+${m.xp} XP</div>`;
+    div.onclick = () => openMission(world, m);
+    sb.appendChild(div);
+  });
+}
+
+function openMission(world, mission) {
+  state.currentMission = mission.id;
+  document.querySelectorAll('.mission-item').forEach(el => el.classList.remove('active'));
+  const msb = document.getElementById('msb-' + mission.id);
+  if (msb) msb.classList.add('active');
+  const content = document.getElementById('mission-content');
+  const tags = getMissionTags(mission.type);
+  content.innerHTML = `
+    <div class="mission-title-bar animate-in">
+      <div class="world-emoji">${world.emoji}</div>
+      <div>
+        <div class="mission-main-title">${mission.code}: ${mission.title}</div>
+        <div class="mission-main-sub">Hadiah: <strong style="color:var(--amber-mid)">+${mission.xp} XP</strong></div>
+        <div style="margin-top:0.5rem;">${tags}</div>
+      </div>
+    </div>`;
+
+  if (state.completedMissions.includes(mission.id)) {
+    content.innerHTML += `<div class="completion-banner animate-in"><p>✅ Misi ini sudah selesai! XP sudah didapatkan.</p></div>`;
+    return;
+  }
+
+  switch (mission.type) {
+    case 'emissions': renderEmissionsMission(content, world, mission); break;
+    case 'quiz-boss1': renderBossQuiz(content, world, mission); break;
+    case 'quiz-parts': renderPartsQuiz(content, world, mission); break;
+    case 'battery': renderBatteryMission(content, world, mission); break;
+    case 'quiz-motor': renderMotorQuiz(content, world, mission); break;
+    case 'route': renderRouteMission(content, world, mission); break;
+    case 'spklu': renderSpkluMission(content, world, mission); break;
+    case 'citybuilder': renderCityBuilder(content, world, mission); break;
+    case 'presentation': renderPresentation(content, world, mission); break;
+    default: content.innerHTML += `<p>Misi ini belum tersedia.</p>`;
+  }
+  enhanceDialogue(content);
+}
+
+function getMissionTags(type) {
+  const tags = {
+    'emissions': '<span class="tag tag-env">🌍 Lingkungan</span><span class="tag tag-science">🔬 Sains</span>',
+    'quiz-boss1': '<span class="tag tag-science">⚔️ Boss Battle</span>',
+    'quiz-parts': '<span class="tag tag-engineering">⚙️ Engineering</span>',
+    'battery': '<span class="tag tag-science">⚡ Sains</span><span class="tag tag-math">📐 Matematika</span>',
+    'quiz-motor': '<span class="tag tag-science">🔌 Fisika</span>',
+    'route': '<span class="tag tag-math">📊 Matematika</span><span class="tag tag-engineering">🛣️ Engineering</span>',
+    'spklu': '<span class="tag tag-engineering">🏗️ Engineering</span><span class="tag tag-math">📐 Logika</span>',
+    'citybuilder': '<span class="tag tag-env">🏙️ Tata Kota</span><span class="tag tag-engineering">🤝 Kolaborasi</span>',
+    'presentation': '<span class="tag tag-env">📣 Komunikasi</span><span class="tag tag-math">📊 Data</span>',
+  };
+  return tags[type] || '';
+}
+
+// ===================== MISSION 1: EMISSIONS =====================
+const LOCATIONS = [
+  { name: 'Bundaran HI', emoji: '🏛️', co2: 42 },
+  { name: 'Blok M', emoji: '🏢', co2: 38 },
+  { name: 'Kemayoran', emoji: '✈️', co2: 55 },
+  { name: 'Tanjung Priok', emoji: '🚢', co2: 61 },
+  { name: 'Cawang', emoji: '🛣️', co2: 48 },
+  { name: 'Grogol', emoji: '🏪', co2: 35 },
+  { name: 'Cempaka Putih', emoji: '🏥', co2: 29 },
+  { name: 'Pasar Minggu', emoji: '🛒', co2: 44 },
+  { name: 'Lebak Bulus', emoji: '🚇', co2: 32 },
+  { name: 'Pluit', emoji: '🌊', co2: 51 },
+];
+
+function renderEmissionsMission(content, world, mission) {
+  content.innerHTML += `
+    <div class="activity-card animate-in">
+      <div class="npc-bubble"><div class="npc-name">🚌 Pak Budi — Sopir Bus</div>
+        "Hai, anak muda! Saya Pak Budi. Coba kamu periksa asap dari bus-bus tua di 10 titik kota. Saya kasih alat ukurnya. Nanti laporkan hasilnya ke Balai Kota ya!"
+      </div>
+      <h3>📡 Scan Emisi CO₂</h3>
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:1rem;">Klik setiap titik kota untuk mengukur emisi CO₂ (µg/m³)</p>
+      <div class="emission-map" id="em-map"></div>
+      <div style="margin-top:1rem;display:flex;align-items:center;gap:1rem;">
+        <span style="font-size:0.85rem;color:rgba(255,255,255,0.5);">Progress:</span>
+        <div class="prog-bar-bg" style="flex:1;"><div class="prog-bar-fill" id="em-prog" style="width:0%"></div></div>
+        <span style="font-size:0.85rem;font-weight:700;" id="em-count">0/10</span>
+      </div>
+      <div id="em-result" style="margin-top:1rem;"></div>
+    </div>`;
+  renderEmMap();
+}
+
+function renderEmMap() {
+  const map = document.getElementById('em-map');
+  if (!map) return;
+  map.innerHTML = '';
+  LOCATIONS.forEach((loc, i) => {
+    const scanned = state.scannedLocations.includes(i);
+    const div = document.createElement('div');
+    div.className = 'em-location' + (scanned ? ' scanned' : '');
+    div.innerHTML = `<div class="em-icon">${loc.emoji}</div>
+      <div class="em-name">${loc.name}</div>
+      ${scanned ? `<div class="em-co2">CO₂: ${loc.co2} µg/m³</div>` : '<div class="em-co2" style="opacity:0">-</div>'}`;
+    if (!scanned) div.onclick = () => scanLocation(i);
+    map.appendChild(div);
+  });
+  const count = state.scannedLocations.length;
+  const prog = document.getElementById('em-prog');
+  const cnt = document.getElementById('em-count');
+  if (prog) prog.style.width = (count / 10 * 100) + '%';
+  if (cnt) cnt.textContent = count + '/10';
+  if (count >= 10) {
+    const res = document.getElementById('em-result');
+    if (res) res.innerHTML = `
+      <div class="npc-bubble"><div class="npc-name">🚌 Pak Budi</div>
+        "Wah, ternyata sebanyak itu emisi CO2-nya... Saya baru tahu. Bus-bus diesel kami memang boros dan kotor. Kalau ada bus listrik Hyundai, mungkin udara Jakarta bisa lebih bersih ya?"
+      </div>
+      <button class="btn btn-primary" onclick="completeMission('${state.currentMission}', 500)">✅ Laporkan ke Balai Kota (+500 XP)</button>`;
+  }
+}
+
+function scanLocation(i) {
+  if (state.scannedLocations.includes(i)) return;
+  state.scannedLocations.push(i);
+  showToast(`📡 Scan selesai: ${LOCATIONS[i].name} — ${LOCATIONS[i].co2} µg/m³`);
+  renderEmMap();
+}
+
+// ===================== MISSION: BOSS QUIZ =====================
+function renderBossQuiz(content, world, mission) {
+  const q = [
+    { q: 'Apa penyumbang utama polusi udara Jakarta?', opts: ['Pabrik', 'Kendaraan bermotor', 'Sampah', 'Pertanian'], ans: 1 },
+    { q: 'ISPU singkatan dari?', opts: ['Indeks Standar Pencemaran Udara', 'Ikatan Sopir Profesional Umum', 'Indeks Suhu Perkotaan Utama', 'Instalasi Sistem Produksi Umum'], ans: 0 },
+    { q: 'Gas apa yang paling banyak dihasilkan pembakaran bahan bakar?', opts: ['O₂', 'N₂', 'CO₂', 'H₂'], ans: 2 },
+    { q: 'Mengapa bus listrik lebih ramah lingkungan?', opts: ['Lebih murah', 'Tidak ada pembakaran langsung', 'Lebih cepat', 'Lebih kecil'], ans: 1 },
+    { q: 'Sektor transportasi menyumbang berapa % emisi polutan udara Jakarta?', opts: ['20%', '40%', '70%', '90%'], ans: 2 },
+  ];
+  renderQuizSequence(content, q, mission, 'boss');
+}
+
+// ===================== MISSION: PARTS QUIZ =====================
+function renderPartsQuiz(content, world, mission) {
+  content.innerHTML += `
+    <div class="activity-card animate-in">
+      <div class="npc-bubble"><div class="npc-name">👩‍🔬 Dr. Indira — Ilmuwan Hyundai</div>
+        "Selamat datang di Laboratorium Hyundai! Kamu datang di saat yang tepat — kami butuh teknisi muda yang cerdas!"
+      </div>
+      <h3>🔍 Kenali Komponen Bus Listrik</h3>
+    </div>`;
+  const q = [
+    { q: 'Apa fungsi baterai lithium-ion pada bus listrik?', opts: ['Mendinginkan mesin', 'Menyimpan energi listrik', 'Menggerakkan roda langsung', 'Memfilter udara'], ans: 1 },
+    { q: 'Motor listrik berbeda dari mesin bensin karena...', opts: ['Lebih besar', 'Tidak ada pembakaran', 'Membutuhkan oli lebih banyak', 'Hanya bekerja di siang hari'], ans: 1 },
+    { q: 'Apa itu regenerative braking?', opts: ['Rem yang lebih keras', 'Sistem yang mengubah energi rem menjadi listrik', 'Rem darurat otomatis', 'Pendingin rem'], ans: 1 },
+    { q: 'BMS singkatan dari?', opts: ['Bus Management System', 'Battery Management System', 'Brake Motor System', 'Boost Mode Switch'], ans: 1 },
+  ];
+  renderQuizSequence(content, q, mission, 'parts');
+}
+
+// ===================== MISSION: MOTOR QUIZ =====================
+function renderMotorQuiz(content, world, mission) {
+  content.innerHTML += `<div class="activity-card animate-in">
+    <div class="npc-bubble"><div class="npc-name">👩‍🔬 Dr. Indira</div>
+      "Bagus! Sekarang motor listrik bus ini berbeda dengan motor bensin. Tidak ada pembakaran, tidak ada asap. Hanya elektron yang bergerak menghasilkan putaran!"
+    </div>
+    <h3>⚡ Puzzle Sirkuit Listrik</h3></div>`;
+  const q = [
+    { q: 'Rangkaian seri berbeda dengan paralel karena...', opts: ['Arus berbeda di setiap komponen', 'Tegangan sama di semua titik', 'Arus sama di semua komponen', 'Tidak ada resistensi'], ans: 2 },
+    { q: 'Satuan energi listrik yang digunakan bus EV adalah?', opts: ['kW', 'kWh', 'Volt', 'Ampere'], ans: 1 },
+    { q: 'Hyundai Elec City Bus memiliki kapasitas baterai berapa kWh?', opts: ['100 kWh', '200 kWh', '300 kWh', '500 kWh'], ans: 2 },
+    { q: 'Konverter DC-DC pada bus listrik berfungsi untuk...', opts: ['Mengubah tegangan DC ke level yang dibutuhkan', 'Mengisi baterai dari matahari', 'Menghidupkan sistem pendingin', 'Mengatur kecepatan roda'], ans: 0 },
+  ];
+  renderQuizSequence(content, q, mission, 'motor');
+}
+
+// ===================== GENERIC QUIZ RENDERER =====================
+function renderQuizSequence(content, questions, mission, quizId) {
+  const key = 'quiz-' + quizId;
+  if (!state.quizAnswered[key]) state.quizAnswered[key] = { current: 0, score: 0 };
+  const qs = state.quizAnswered[key];
+
+  function renderQ(idx) {
+    const qDiv = document.getElementById('quiz-area-' + quizId);
+    if (!qDiv) return;
+    if (idx >= questions.length) {
+      const pct = Math.round((qs.score / questions.length) * 100);
+      qDiv.innerHTML = `
+        <div style="text-align:center;padding:1.5rem;">
+          <div style="font-size:2.5rem;margin-bottom:0.5rem;">${pct >= 60 ? '🎉' : '😅'}</div>
+          <div style="font-size:1.2rem;font-weight:700;margin-bottom:0.5rem;">Skor: ${qs.score}/${questions.length} (${pct}%)</div>
+          <p style="color:rgba(255,255,255,0.5);font-size:0.9rem;margin-bottom:1.5rem;">${pct >= 60 ? 'Hebat! Kamu sudah menguasai materi ini.' : 'Pelajari lagi dan coba ulang!'}</p>
+          ${pct >= 60 ? `<button class="btn btn-primary" onclick="completeMission('${mission.id}', ${mission.xp})">✅ Selesaikan Misi (+${mission.xp} XP)</button>` : `<button class="btn btn-secondary" onclick="state.quizAnswered['${key}']={current:0,score:0};openMission(WORLDS.find(w=>w.id==state.currentWorld),WORLDS.find(w=>w.id==state.currentWorld).missions.find(m=>m.id=='${mission.id}'))">🔁 Coba Lagi</button>`}
+        </div>`;
+      return;
+    }
+    const q = questions[idx];
+    qDiv.innerHTML = `
+      <div class="quiz-question">${idx+1}/${questions.length}. ${q.q}</div>
+      <div class="quiz-options">${q.opts.map((o,i)=>`<button class="quiz-option" onclick="answerQuiz(${i},${q.ans},'${quizId}',${idx})">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}</div>
+      <div id="quiz-fb-${quizId}"></div>`;
+  }
+
+  window.answerQuiz = function(chosen, correct, qid, idx) {
+    const key2 = 'quiz-' + qid;
+    const qs2 = state.quizAnswered[key2];
+    const qDiv = document.getElementById('quiz-area-' + qid);
+    const opts = qDiv.querySelectorAll('.quiz-option');
+    opts.forEach((o,i) => { o.disabled = true; if(i===correct) o.classList.add('correct'); if(i===chosen && chosen!==correct) o.classList.add('wrong'); });
+    const fb = document.getElementById('quiz-fb-' + qid);
+    if (chosen === correct) {
+      qs2.score++;
+      if (fb) { fb.className='quiz-feedback ok'; fb.textContent='✅ Benar! '; }
+    } else {
+      if (fb) { fb.className='quiz-feedback fail'; fb.textContent=`❌ Kurang tepat. Jawaban benar: ${String.fromCharCode(65+correct)}. ${questions[idx].opts[correct]}`; }
+    }
+    qs2.current++;
+    setTimeout(() => renderQ(qs2.current), 1200);
+  };
+
+  content.innerHTML += `<div class="activity-card animate-in" id="quiz-area-${quizId}"></div>`;
+  setTimeout(() => renderQ(qs.current), 50);
+}
+
+// ===================== MISSION: BATTERY =====================
+function renderBatteryMission(content, world, mission) {
+  state.batteryFilled = 0;
+  content.innerHTML += `
+    <div class="activity-card animate-in">
+      <div class="npc-bubble"><div class="npc-name">👩‍🔬 Dr. Indira</div>
+        "Bus listrik ini menggunakan baterai lithium-ion. Kapasitasnya 300 kWh — cukup untuk menempuh 250 kilometer! Coba kamu rakit sel-sel baterainya."
+      </div>
+      <h3>🔋 Rakit Pack Baterai 300 kWh</h3>
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:1rem;">Klik sel-sel baterai untuk mengisinya. Target: 20/20 sel (= 300 kWh)</p>
+      <div class="battery-grid" id="bat-grid"></div>
+      <div class="battery-progress">
+        <span class="cap-label" id="bat-cap">0 kWh</span>
+        <div class="cap-bar-wrap"><div class="cap-bar" id="bat-bar" style="width:0%"></div></div>
+        <span style="font-size:0.85rem;color:rgba(255,255,255,0.4);">Target: 300 kWh</span>
+      </div>
+      <div id="bat-result"></div>
+    </div>`;
+  renderBatGrid();
+}
+
+function renderBatGrid() {
+  const grid = document.getElementById('bat-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let i = 0; i < 20; i++) {
+    const cell = document.createElement('div');
+    const filled = i < state.batteryFilled;
+    cell.className = 'battery-cell' + (filled ? ' filled' : '');
+    cell.innerHTML = filled ? '⚡' : '';
+    cell.onclick = () => fillBatteryCell(i);
+    grid.appendChild(cell);
+  }
+}
+
+function fillBatteryCell(i) {
+  if (i !== state.batteryFilled) { showToast('Isi berurutan dari kiri ke kanan!'); return; }
+  state.batteryFilled++;
+  const kWh = state.batteryFilled * 15;
+  document.getElementById('bat-cap').textContent = kWh + ' kWh';
+  document.getElementById('bat-bar').style.width = (kWh / 300 * 100) + '%';
+  renderBatGrid();
+  showToast(`⚡ Sel ${state.batteryFilled}/20 terpasang`);
+  if (state.batteryFilled >= 20) {
+    document.getElementById('bat-result').innerHTML = `
+      <div class="npc-bubble"><div class="npc-name">👩‍🔬 Dr. Indira</div>
+        "LUAR BIASA! Pack baterai 300 kWh berhasil dirakit! Efisiensi 93%! Itu bahkan lebih baik dari rata-rata insinyur senior kami!"
+      </div>
+      <button class="btn btn-primary" onclick="completeMission('${state.currentMission}', 750)">✅ Selesai (+750 XP)</button>`;
+  }
+}
+
+// ===================== MISSION: ROUTE =====================
+const ROUTE = [
+  { name: 'Blok M\nTerminal', emoji: '🚏' },
+  { name: 'Kebayoran\nBaru', emoji: '🏘️' },
+  { name: 'Sudirman\nGBK', emoji: '🏟️' },
+  { name: 'Semanggi', emoji: '🛣️' },
+  { name: 'Bundaran HI', emoji: '⛲' },
+];
+
+function renderRouteMission(content, world, mission) {
+  state.routeStep = 0;
+  state.routeBattery = 100;
+  content.innerHTML += `
+    <div class="activity-card animate-in">
+      <div class="npc-bubble"><div class="npc-name">🚌 Sistem Navigasi Bus</div>
+        "Kemudikan bus Hyundai Elec City dari Blok M ke Bundaran HI! Kelola baterai dengan bijak — gunakan rem regeneratif di turunan untuk mengisi ulang!"
+      </div>
+      <h3>🛣️ Rute: Blok M → Bundaran HI</h3>
+      <div class="battery-hud">
+        <div class="bhud-item">
+          <span class="bhud-label">Baterai</span>
+          <span class="bhud-val" id="route-bat" style="color:var(--accent)">100%</span>
+        </div>
+        <div class="bhud-item">
+          <span class="bhud-label">Halte</span>
+          <span class="bhud-val" id="route-step">0/${ROUTE.length-1}</span>
+        </div>
+        <div class="bhud-item">
+          <span class="bhud-label">Status</span>
+          <span class="bhud-val" id="route-status" style="font-size:0.9rem;">Siap</span>
+        </div>
+      </div>
+      <div class="route-map">
+        <div class="route-path" id="route-path"></div>
+      </div>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1rem;">
+        <button class="drive-btn" id="btn-drive" onclick="driveNext()">▶ Maju ke Halte Berikutnya</button>
+        <button class="drive-btn" style="background:var(--accent2);color:#000;" onclick="useRegen()">🔄 Rem Regeneratif (+5%)</button>
+      </div>
+      <div id="route-result" style="margin-top:1rem;"></div>
+    </div>`;
+  renderRoutePath();
+}
+
+function renderRoutePath() {
+  const path = document.getElementById('route-path');
+  if (!path) return;
+  path.innerHTML = '';
+  ROUTE.forEach((stop, i) => {
+    if (i > 0) {
+      const line = document.createElement('div');
+      line.className = 'route-line ' + (i <= state.routeStep ? 'passed' : 'future');
+      path.appendChild(line);
+    }
+    const stopDiv = document.createElement('div');
+    stopDiv.className = 'route-stop';
+    const dotClass = i < state.routeStep ? 'visited' : i === state.routeStep ? 'current' : 'future';
+    stopDiv.innerHTML = `<div class="stop-dot ${dotClass}">${stop.emoji}</div>
+      <div class="stop-label">${stop.name}</div>`;
+    path.appendChild(stopDiv);
+  });
+}
+
+function driveNext() {
+  if (state.routeStep >= ROUTE.length - 1) return;
+  const cost = 12 + Math.floor(Math.random() * 8);
+  state.routeBattery = Math.max(0, state.routeBattery - cost);
+  state.routeStep++;
+  document.getElementById('route-bat').textContent = state.routeBattery + '%';
+  document.getElementById('route-bat').style.color = state.routeBattery < 20 ? '#f09595' : 'var(--accent)';
+  document.getElementById('route-step').textContent = state.routeStep + '/' + (ROUTE.length - 1);
+  document.getElementById('route-status').textContent = `🚌 Di ${ROUTE[state.routeStep].name}`;
+  renderRoutePath();
+  showToast(`🚌 Tiba di ${ROUTE[state.routeStep].name} — baterai ${state.routeBattery}%`);
+  if (state.routeBattery <= 0) {
+    document.getElementById('route-result').innerHTML = `<div class="quiz-feedback fail">❌ Baterai habis! Coba lagi dengan lebih hemat energi.</div>
+      <button class="btn btn-secondary" style="margin-top:0.75rem;" onclick="state.routeStep=0;state.routeBattery=100;renderRoutePath();document.getElementById('route-bat').textContent='100%';document.getElementById('route-bat').style.color='var(--accent)';document.getElementById('route-step').textContent='0/${ROUTE.length-1}';document.getElementById('route-status').textContent='Siap';document.getElementById('route-result').innerHTML='';">🔁 Coba Lagi</button>`;
+    document.getElementById('btn-drive').disabled = true;
+  } else if (state.routeStep >= ROUTE.length - 1) {
+    document.getElementById('route-result').innerHTML = `
+      <div class="npc-bubble"><div class="npc-name">🚌 Sistem Navigasi</div>
+        "Selamat! Rute Blok M → Bundaran HI selesai dengan baterai ${state.routeBattery}% tersisa. Efisiensi energi: LUAR BIASA!"
+      </div>
+      <button class="btn btn-primary" onclick="completeMission('${state.currentMission}', 600)">✅ Selesai Rute (+600 XP)</button>`;
+    document.getElementById('btn-drive').disabled = true;
+  }
+}
+
+function useRegen() {
+  state.routeBattery = Math.min(100, state.routeBattery + 5);
+  document.getElementById('route-bat').textContent = state.routeBattery + '%';
+  document.getElementById('route-bat').style.color = state.routeBattery < 20 ? '#f09595' : 'var(--accent)';
+  showToast('🔄 Rem regeneratif: +5% baterai');
+}
+
+// ===================== MISSION: SPKLU =====================
+const SPKLU_LOCATIONS = [
+  { name: 'Blok M', traffic: 'Tinggi', score: 90, emoji: '🏢' },
+  { name: 'Monas', traffic: 'Sedang', score: 70, emoji: '🏛️' },
+  { name: 'Kemayoran', traffic: 'Tinggi', score: 85, emoji: '✈️' },
+  { name: 'Depok', traffic: 'Rendah', score: 50, emoji: '🏘️' },
+  { name: 'Senen', traffic: 'Sedang', score: 65, emoji: '🛒' },
+  { name: 'Tanjung Priok', traffic: 'Tinggi', score: 80, emoji: '🚢' },
+];
+
+function renderSpkluMission(content, world, mission) {
+  if (!state.spkluPlaced) state.spkluPlaced = [];
+  content.innerHTML += `
+    <div class="activity-card animate-in">
+      <div class="npc-bubble"><div class="npc-name">🔌 Sistem Perencanaan Kota</div>
+        "Bangun 3 SPKLU (Stasiun Pengisian Kendaraan Listrik Umum) di lokasi paling strategis! Pilih berdasarkan volume lalu lintas."
+      </div>
+      <h3>🔌 Pilih Lokasi SPKLU (pilih 3)</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;margin:1rem 0;" id="spklu-grid"></div>
+      <div id="spklu-result"></div>
+    </div>`;
+  renderSpkluGrid();
+}
+
+function renderSpkluGrid() {
+  const g = document.getElementById('spklu-grid');
+  if (!g) return;
+  g.innerHTML = '';
+  SPKLU_LOCATIONS.forEach((loc, i) => {
+    const placed = state.spkluPlaced && state.spkluPlaced.includes(i);
+    const div = document.createElement('div');
+    div.style.cssText = `background:var(--bg-card);border:1px solid ${placed ? 'var(--accent)' : 'var(--border)'};border-radius:12px;padding:1rem;cursor:pointer;transition:all 0.2s;text-align:center;`;
+    div.innerHTML = `<div style="font-size:1.8rem;">${loc.emoji}</div>
+      <div style="font-size:0.9rem;font-weight:600;margin:0.3rem 0;">${loc.name}</div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.5);">Lalu lintas: ${loc.traffic}</div>
+      ${placed ? '<div style="margin-top:0.5rem;font-size:0.8rem;color:var(--accent);">✅ SPKLU Dipasang</div>' : '<div style="margin-top:0.5rem;font-size:0.8rem;color:rgba(255,255,255,0.3);">Klik untuk pasang</div>'}`;
+    if (!placed && (!state.spkluPlaced || state.spkluPlaced.length < 3)) div.onclick = () => placeSpklu(i);
+    g.appendChild(div);
+  });
+  const res = document.getElementById('spklu-result');
+  if (state.spkluPlaced && state.spkluPlaced.length >= 3 && res) {
+    const totalScore = state.spkluPlaced.reduce((sum, i) => sum + SPKLU_LOCATIONS[i].score, 0);
+    const avg = Math.round(totalScore / 3);
+    res.innerHTML = `
+      <div class="npc-bubble"><div class="npc-name">🔌 Sistem Evaluasi</div>
+        "Analisis selesai! Skor strategis jaringan SPKLU kamu: <strong>${avg}%</strong>. ${avg >= 75 ? 'Pilihan yang sangat strategis!' : 'Cukup baik, tapi bisa lebih optimal!'}"
+      </div>
+      <div class="progress-row"><div class="prog-label">Skor Strategis</div><div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${avg}%"></div></div><div class="prog-val">${avg}%</div></div>
+      <button class="btn btn-primary" style="margin-top:0.75rem;" onclick="completeMission('${state.currentMission}', 800)">✅ SPKLU Selesai (+800 XP)</button>`;
+  }
+}
+
+function placeSpklu(i) {
+  if (!state.spkluPlaced) state.spkluPlaced = [];
+  if (state.spkluPlaced.includes(i) || state.spkluPlaced.length >= 3) return;
+  state.spkluPlaced.push(i);
+  showToast(`🔌 SPKLU dipasang di ${SPKLU_LOCATIONS[i].name}!`);
+  renderSpkluGrid();
+}
+
+// ===================== MISSION: CITY BUILDER =====================
+function renderCityBuilder(content, world, mission) {
+  if (!state.cityGrid) state.cityGrid = {};
+  if (!state.selectedBuild) state.selectedBuild = '🚌';
+  state.teamScore = 0;
+  const items = [
+    { emoji: '🚌', name: 'Halte Bus', pts: 15 },
+    { emoji: '🔌', name: 'SPKLU', pts: 20 },
+    { emoji: '🌳', name: 'Taman', pts: 10 },
+    { emoji: '🏢', name: 'Gedung', pts: 8 },
+    { emoji: '🚶', name: 'Pejalan Kaki', pts: 5 },
+    { emoji: '☀️', name: 'Panel Surya', pts: 18 },
+  ];
+  content.innerHTML += `
+    <div class="activity-card animate-in">
+      <div class="npc-bubble"><div class="npc-name">🏆 Hackathon Virtual — Jakarta 2050</div>
+        "Desain kota Jakarta masa depan! Bangun infrastruktur transportasi hijau. Tim dengan skor komunitas tertinggi menang!"
+      </div>
+      <h3>🏙️ City Builder: Jakarta 2050</h3>
+      <div class="build-palette" id="build-pal"></div>
+      <div class="city-grid" id="city-grid-el"></div>
+      <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+        <div><span style="color:rgba(255,255,255,0.5);font-size:0.85rem;">Skor Kota: </span><span style="font-size:1.2rem;font-weight:700;color:var(--accent);" id="city-score">0</span></div>
+        <button class="btn btn-primary btn-sm" onclick="evalCity()">📊 Evaluasi Kota</button>
+      </div>
+      <div id="city-result"></div>
+    </div>`;
+
+  const pal = document.getElementById('build-pal');
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'build-item' + (state.selectedBuild === item.emoji ? ' selected' : '');
+    div.innerHTML = `${item.emoji} ${item.name} (+${item.pts})`;
+    div.onclick = () => { state.selectedBuild = item.emoji; document.querySelectorAll('.build-item').forEach(b => b.classList.remove('selected')); div.classList.add('selected'); };
+    pal.appendChild(div);
+  });
+
+  const cityGrid = document.getElementById('city-grid-el');
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 6; c++) {
+      const key = r + '-' + c;
+      const cell = document.createElement('div');
+      cell.className = 'city-cell' + (state.cityGrid[key] ? ' placed' : '');
+      cell.textContent = state.cityGrid[key] || '';
+      cell.onclick = () => placeCity(key, cell, items);
+      cityGrid.appendChild(cell);
+    }
+  }
+}
+
+function placeCity(key, cell, items) {
+  state.cityGrid[key] = state.selectedBuild;
+  cell.textContent = state.selectedBuild;
+  cell.classList.add('placed');
+  const item = [
+    { emoji: '🚌', pts: 15 }, { emoji: '🔌', pts: 20 }, { emoji: '🌳', pts: 10 },
+    { emoji: '🏢', pts: 8 }, { emoji: '🚶', pts: 5 }, { emoji: '☀️', pts: 18 }
+  ].find(i => i.emoji === state.selectedBuild);
+  if (item) {
+    state.teamScore += item.pts;
+    document.getElementById('city-score').textContent = state.teamScore;
+  }
+}
+
+function evalCity() {
+  const placed = Object.keys(state.cityGrid).length;
+  const res = document.getElementById('city-result');
+  if (placed < 6) { res.innerHTML = '<div class="quiz-feedback fail">⚠️ Bangun setidaknya 6 bangunan dulu!</div>'; return; }
+  const hasBus = Object.values(state.cityGrid).includes('🚌');
+  const hasSpklu = Object.values(state.cityGrid).includes('🔌');
+  const hasGreen = Object.values(state.cityGrid).includes('🌳') || Object.values(state.cityGrid).includes('☀️');
+  const complete = hasBus && hasSpklu && hasGreen;
+  const msg = complete ? 'Desain kota kamu sangat komprehensif! Ada halte bus, SPKLU, dan elemen hijau.' : 'Pastikan ada halte bus (🚌), SPKLU (🔌), dan elemen hijau (🌳/☀️)!';
+  res.innerHTML = `
+    <div style="margin-top:1rem;">
+      <div class="progress-row"><div class="prog-label">🚌 Transportasi</div><div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${hasBus?100:20}%"></div></div><div class="prog-val">${hasBus?'✅':'❌'}</div></div>
+      <div class="progress-row"><div class="prog-label">🔌 Energi</div><div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${hasSpklu?100:20}%"></div></div><div class="prog-val">${hasSpklu?'✅':'❌'}</div></div>
+      <div class="progress-row"><div class="prog-label">🌿 Hijau</div><div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${hasGreen?100:20}%"></div></div><div class="prog-val">${hasGreen?'✅':'❌'}</div></div>
+    </div>
+    <div class="npc-bubble" style="margin-top:0.75rem;"><div class="npc-name">🏆 Juri Hackathon</div>${msg}</div>
+    ${complete ? `<button class="btn btn-primary" style="margin-top:0.75rem;" onclick="completeMission('${state.currentMission}',1000)">🏆 Menangkan Hackathon (+1000 XP)</button>` : ''}`;
+}
+
+// ===================== MISSION: PRESENTATION =====================
+function renderPresentation(content, world, mission) {
+  const worldsDone = state.completedWorlds.length;
+  const missionsDone = state.completedMissions.length;
+  const totalXp = state.xp;
+
+  content.innerHTML += `
+    <div class="activity-card animate-in">
+      <div class="npc-bubble"><div class="npc-name">🏛️ Pak Walikota Virtual</div>
+        "Selamat datang di Balai Kota Jakarta 2050! Hari ini, saya ingin mendengar proposal terbaik untuk masa depan transportasi Jakarta!"
+      </div>
+      <h3>📊 Susun Proposal Transportasi Hijau Jakarta 2050</h3>
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:1.25rem;">Kumpulkan data dari semua petualanganmu dan buat proposal yang meyakinkan!</p>
+
+      <div class="presentation-slide">
+        <div class="slide-num">Slide 1 — Data Emisi</div>
+        <div class="slide-title">🌆 Kondisi Udara Jakarta 2030</div>
+        ${LOCATIONS.slice(0,5).map(l=>`<div class="data-row"><div class="data-key">${l.emoji} ${l.name}</div><div class="data-val">${l.co2} µg/m³</div></div>`).join('')}
+        <div class="data-row" style="margin-top:0.5rem;"><div class="data-key" style="font-weight:600;">Rata-rata CO₂</div><div class="data-val" style="font-size:1.1rem;">${Math.round(LOCATIONS.reduce((s,l)=>s+l.co2,0)/LOCATIONS.length)} µg/m³</div></div>
+      </div>
+
+      <div class="presentation-slide">
+        <div class="slide-num">Slide 2 — Solusi Bus Listrik</div>
+        <div class="slide-title">🚌 Hyundai Elec City Bus</div>
+        <div class="data-row"><div class="data-key">Kapasitas Baterai</div><div class="data-val">300 kWh</div></div>
+        <div class="data-row"><div class="data-key">Jangkauan</div><div class="data-val">250 km per charge</div></div>
+        <div class="data-row"><div class="data-key">Emisi CO₂</div><div class="data-val">0 g/km (langsung)</div></div>
+        <div class="data-row"><div class="data-key">Rem Regeneratif</div><div class="data-val">Hemat 15-25% energi</div></div>
+        <div class="data-row"><div class="data-key">Efisiensi Baterai</div><div class="data-val">93% (hasil rakitan)</div></div>
+      </div>
+
+      <div class="presentation-slide">
+        <div class="slide-num">Slide 3 — Rencana Implementasi</div>
+        <div class="slide-title">🗺️ Jakarta Hijau 2050</div>
+        <div class="data-row"><div class="data-key">SPKLU Dibangun</div><div class="data-val">${state.spkluPlaced ? state.spkluPlaced.length : 0} Stasiun</div></div>
+        <div class="data-row"><div class="data-key">Rute Teroptimasi</div><div class="data-val">Blok M → Bundaran HI</div></div>
+        <div class="data-row"><div class="data-key">Skor Kota</div><div class="data-val">${state.teamScore} poin</div></div>
+        <div class="data-row"><div class="data-key">Dunia Diselesaikan</div><div class="data-val">${worldsDone}/5</div></div>
+      </div>
+
+      <div class="presentation-slide">
+        <div class="slide-num">Slide 4 — Kesimpulan</div>
+        <div class="slide-title">🌿 Mengapa Jakarta Harus EV?</div>
+        <ul class="objective-list" style="margin:0.5rem 0;">
+          <li>Transportasi = 70% emisi polutan udara Jakarta</li>
+          <li>Bus listrik menghasilkan 0 emisi CO₂ langsung</li>
+          <li>Hyundai Elec City hemat 15-25% energi dengan rem regeneratif</li>
+          <li>SPKLU strategis = infrastruktur siap 2050</li>
+          <li>Investasi EV = udara bersih = generasi sehat</li>
+        </ul>
+      </div>
+
+      <hr class="section-divider">
+      <h3 style="margin-bottom:1rem;">❓ Pertanyaan Walikota</h3>`;
+
+  const wQ = [
+    { q: 'Bagaimana bus listrik bisa beroperasi saat listrik padam?', opts: ['Tidak bisa beroperasi', 'Menggunakan baterai cadangan darurat', 'Menggunakan bensin', 'Berhenti total'], ans: 1 },
+    { q: 'Apa keuntungan ekonomi bus listrik dibanding diesel?', opts: ['Lebih mahal operasional', 'Lebih murah biaya bahan bakar jangka panjang', 'Tidak ada keuntungan', 'Hanya hemat perawatan'], ans: 1 },
+  ];
+  renderQuizSequence(content, wQ, mission, 'walikota');
+  content.innerHTML += `<div id="final-complete-btn" style="margin-top:1rem;"></div>`;
+
+  const origComplete = window.completeMission;
+  window.completeMissionFinal = function() {
+    completeMission(mission.id, mission.xp);
+  };
+}
+
+// ===================== COMPLETION =====================
+function completeMission(missionId, xp) {
+  if (state.completedMissions.includes(missionId)) return;
+  state.completedMissions.push(missionId);
+  state.xp += xp;
+  showToast(`🎉 Misi selesai! +${xp} XP`);
+  updateHUD();
+
+  // Unlock next missions in same world
+  const world = WORLDS.find(w => w.id === state.currentWorld);
+  if (world) {
+    world.missions.forEach((m, i) => {
+      if (i > 0 && state.completedMissions.includes(world.missions[i-1].id)) {
+        m.locked = false;
+      }
+    });
+
+    // Check world complete
+    const allDone = world.missions.every(m => state.completedMissions.includes(m.id));
+    if (allDone && !state.completedWorlds.includes(world.id)) {
+      state.completedWorlds.push(world.id);
+      setTimeout(() => { showToast(`🌍 Dunia ${world.id} selesai! Dunia baru terbuka!`); }, 800);
+    }
+    renderMissionSidebar(world);
+  }
+
+  // Check game complete
+  if (state.xp >= 5000 || state.completedMissions.length >= 9) {
+    setTimeout(() => showCertificate(), 1500);
+    return;
+  }
+
+  // Show completion in content
+  const missionContent = document.getElementById('mission-content');
+  if (missionContent) {
+    const lastCard = missionContent.querySelector('.activity-card:last-child');
+    if (lastCard) {
+      const banner = document.createElement('div');
+      banner.className = 'completion-banner animate-in';
+      banner.style.marginTop = '1rem';
+      banner.innerHTML = `<p>✅ Misi berhasil! +${xp} XP didapatkan. Total XP: ${state.xp}</p>`;
+      lastCard.appendChild(banner);
+    }
+  }
+}
+
+function showCertificate() {
+  document.getElementById('cert-player-name').textContent = state.playerName;
+  document.getElementById('cert-rank').textContent = getRank(state.xp);
+  document.getElementById('cert-xp').textContent = state.xp.toLocaleString();
+  document.getElementById('cert-worlds').textContent = state.completedWorlds.length;
+  document.getElementById('cert-missions').textContent = state.completedMissions.length;
+  showScreen('completion-screen');
+}
+
+// ===================== TOAST =====================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._timeout);
+  t._timeout = setTimeout(() => { t.style.display = 'none'; }, 2500);
+}
+
+// ===================== IN-MISSION WORLD SWITCHER =====================
+function isWorldUnlocked(idx) {
+  if (idx < 0 || idx >= WORLDS.length) return false;
+  const w = WORLDS[idx];
+  if (state.completedWorlds.includes(w.id)) return true;
+  return idx === 0 || state.completedWorlds.includes(idx); // previous world id == idx
+}
+
+function switchWorld(dir) {
+  const idx = WORLDS.findIndex(w => w.id === state.currentWorld);
+  const target = idx + dir;
+  if (target < 0 || target >= WORLDS.length) return;
+  if (!isWorldUnlocked(target)) {
+    showToast('🔒 Dunia itu masih terkunci. Selesaikan dunia sebelumnya dulu!');
+    return;
+  }
+  enterWorld(WORLDS[target].id);
+}
+
+function updateWorldSwitchButtons() {
+  const idx = WORLDS.findIndex(w => w.id === state.currentWorld);
+  const prev = document.getElementById('world-prev');
+  const next = document.getElementById('world-next');
+  if (prev) prev.disabled = !isWorldUnlocked(idx - 1);
+  if (next) next.disabled = !isWorldUnlocked(idx + 1);
+}
+
+// ===================== MINECRAFT PORTING SLOT =====================
+// FUTURE-COMPATIBILITY: plug real Minecraft Education world links / transfer codes here.
+// Set enabled:true and fill `link` (or rely on the scheme template) to make "Buka Sekarang" launch.
+const MINECRAFT_CONFIG = {
+  enabled: false,                       // flip to true once real world links exist
+  edition: 'Minecraft Education Edition',
+  scheme: 'minecraftedu://',            // deep-link scheme placeholder
+  worlds: {
+    1: { worldName: 'Kota Polusi — Jakarta 2030',        transferCode: 'EDU-W1-JKT2030', link: '' },
+    2: { worldName: 'Pabrik Hyundai — Lab Teknologi EV', transferCode: 'EDU-W2-EVLAB',   link: '' },
+    3: { worldName: 'Kota Hijau — Uji Rute Bus',         transferCode: 'EDU-W3-GREEN',   link: '' },
+    4: { worldName: 'Pusat Inovasi — Hackathon Virtual', transferCode: 'EDU-W4-HACK',    link: '' },
+    5: { worldName: 'Jakarta Masa Depan — Grand Finale', transferCode: 'EDU-W5-2050',    link: '' },
+  }
+};
+
+function getMcWorld(worldId) {
+  return MINECRAFT_CONFIG.worlds[worldId] || { worldName: 'Dunia EduCraft', transferCode: 'EDU-TBD', link: '' };
+}
+function buildMinecraftLink(worldId) {
+  const w = getMcWorld(worldId);
+  if (w.link) return w.link;
+  // template deep link assembled from the slot config
+  return `${MINECRAFT_CONFIG.scheme}open?world=${encodeURIComponent(w.worldName)}&code=${encodeURIComponent(w.transferCode)}`;
+}
+
+let _mcCurrentWorld = null;
+function openInMinecraft(worldId) {
+  _mcCurrentWorld = worldId;
+  const w = getMcWorld(worldId);
+  const link = buildMinecraftLink(worldId);
+  document.getElementById('mc-world-name').textContent = w.worldName;
+  document.getElementById('mc-code').textContent = w.transferCode;
+  document.getElementById('mc-link').textContent = link;
+  document.getElementById('mc-modal-sub').textContent = `Hubungkan dunia ini ke ${MINECRAFT_CONFIG.edition}.`;
+  const status = document.getElementById('mc-status');
+  const openBtn = document.getElementById('mc-open-btn');
+  if (MINECRAFT_CONFIG.enabled) {
+    status.className = 'mc-status ready';
+    status.textContent = '✅ Koneksi aktif. Klik "Buka Sekarang" untuk meluncurkan map di Minecraft.';
+    openBtn.style.display = '';
+  } else {
+    status.className = 'mc-status pending';
+    status.textContent = '⏳ Slot koneksi siap pakai. Tautan map Minecraft belum dipasang admin — kode transfer di bawah bisa dibagikan untuk impor manual.';
+    openBtn.style.display = 'none';
+  }
+  document.getElementById('mc-modal').classList.add('open');
+}
+function launchMinecraft() {
+  if (!MINECRAFT_CONFIG.enabled) return;
+  const link = buildMinecraftLink(_mcCurrentWorld);
+  window.open(link, '_blank');
+  showToast('🚀 Membuka Minecraft...');
+}
+function copyMcCode() {
+  const code = getMcWorld(_mcCurrentWorld).transferCode;
+  if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => showToast('📋 Kode disalin: ' + code));
+  else showToast('Kode: ' + code);
+}
+function closeMcModal() { document.getElementById('mc-modal').classList.remove('open'); }
+document.addEventListener('click', e => {
+  if (e.target && e.target.id === 'mc-modal') closeMcModal();
+});
+
+// ===================== ILLUSTRATED CHAT-BUBBLE ENHANCER =====================
+// Turns static .npc-bubble blocks into avatar + speech-bubble rows that reveal in sequence.
+function enhanceDialogue(root) {
+  if (!root) return;
+  const bubbles = root.querySelectorAll('.npc-bubble:not([data-enhanced])');
+  bubbles.forEach((bubble, i) => {
+    bubble.setAttribute('data-enhanced', '1');
+    const nameDiv = bubble.querySelector('.npc-name');
+    const nameFull = nameDiv ? nameDiv.textContent.trim() : '🚌';
+    const parts = nameFull.split(' ');
+    const avatar = parts[0] || '🚌';
+    const name = parts.slice(1).join(' ').replace(/^[—-]\s*/, '') || nameFull;
+    // message = bubble content without the name div
+    const clone = bubble.cloneNode(true);
+    const cn = clone.querySelector('.npc-name'); if (cn) cn.remove();
+    const messageHTML = clone.innerHTML.trim();
+
+    const row = document.createElement('div');
+    row.className = 'chat-row';
+    row.style.animationDelay = (i * 0.18) + 's';
+    row.innerHTML = `<div class="chat-avatar">${avatar}</div>
+      <div class="chat-bubble"><div class="npc-name">${name}</div>${messageHTML}</div>`;
+    bubble.parentNode.replaceChild(row, bubble);
+  });
+}
+// Auto-enhance any dialogue added to the mission content (covers result bubbles too)
+document.addEventListener('DOMContentLoaded', () => {
+  const target = document.getElementById('mission-content');
+  if (target && window.MutationObserver) {
+    const obs = new MutationObserver(() => enhanceDialogue(target));
+    obs.observe(target, { childList: true, subtree: true });
+  }
+});
+
+// ===================== INIT =====================
+window.WORLDS = WORLDS;
+</script>
+</body>
+</html>
